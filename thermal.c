@@ -41,7 +41,7 @@
 #define THERMAL_DIR             "thermal_zone"
 #define CPU_ONLINE_FILE_FORMAT  "/sys/devices/system/cpu/cpu%d/online"
 
-#define RPM_FAN_FILE            "/sys/kernel/debug/tegra_fan/cur_rpm"
+#define RPM_FAN_FILE            "/sys/kernel/debug/tegra_fan/rpm_measured"
 
 extern thermal_desc_t platform_data[];
 extern int platform_data_count;

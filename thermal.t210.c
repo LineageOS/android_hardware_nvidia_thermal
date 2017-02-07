@@ -19,15 +19,37 @@
 
 #include "thermal.h"
 
+const char *CPU_LABEL[] = {"CPU0", "CPU1", "CPU2", "CPU3"};
+
 /*
  * This list should fully describe sensors on the platform that provide the
  * temperatures for CPU, GPU, skin, and battery.  Use UNKNOWN_TEMPERATURE for
  * undefined/unused thresholds.
  */
 thermal_desc_t platform_data[] = {
-
+    {
+        .name = "CPU",
+        .type = DEVICE_TEMPERATURE_CPU,
+        .sensor_label = "CPU-therm",
+        .throttling_threshold = 89,
+        .shutdown_threshold = 103,
+        .vr_throttling_threshold = 89,
+        .multiplier = 0.001,
+        .cores = 4,
+        .core_names = CPU_LABEL,
+        .read_temperature = read_cluster_temperature,
+    },
+    {
+        .name = "GPU",
+        .type = DEVICE_TEMPERATURE_GPU,
+        .sensor_label = "GPU-therm",
+        .throttling_threshold = 90.5,
+        .shutdown_threshold = 103,
+        .vr_throttling_threshold = 90.5,
+        .multiplier = 0.001,
+    },
 };
 
-int platform_data_count = 0;
+int platform_data_count = sizeof(platform_data)/sizeof(platform_data[0]);
 
 int num_cpus_total = 4;

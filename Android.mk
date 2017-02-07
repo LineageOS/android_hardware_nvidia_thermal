@@ -1,4 +1,4 @@
-# Copyright (C) 2016 The Android Open Source Project
+# Copyright (C) 2015 The CyanogenMod Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,24 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+ifeq ($(TARGET_THERMALHAL_VARIANT),tegra)
 
 LOCAL_PATH := $(call my-dir)
 
-include $(NVIDIA_DEFAULTS)
+include $(CLEAR_VARS)
 
-LOCAL_C_INCLUDES += device/nvidia/common/thermal
-LOCAL_MODULE_RELATIVE_PATH := hw
-LOCAL_SHARED_LIBRARIES := liblog libcutils
-LOCAL_STATIC_LIBRARIES := libthermalhal
+LOCAL_SRC_FILES := thermal.c
 
-# Provide thermal sensor info on per-platform basis
-ifeq ($(TARGET_PRODUCT),$(filter $(TARGET_PRODUCT),t210ref t210ref_gms t210ref_int))
-LOCAL_SRC_FILES += thermal.jetson_cv.c
-else
-# Report no sensors
-LOCAL_SRC_FILES += thermal.default.c
+ifeq ($(TARGET_TEGRA_VERSION),t124)
+    LOCAL_SRC_FILES += thermal.t124.c
+else ifeq ($(TARGET_TEGRA_VERSION),t210)
+    LOCAL_SRC_FILES += thermal.t210.c
 endif
+
+LOCAL_MODULE_RELATIVE_PATH := hw
+
+LOCAL_SHARED_LIBRARIES := liblog libcutils
 
 LOCAL_MODULE := thermal.$(TARGET_BOARD_PLATFORM)
 
-include $(NVIDIA_SHARED_LIBRARY)
+LOCAL_MODULE_TAGS := optional
+
+include $(BUILD_SHARED_LIBRARY)
+
+endif # TARGET_THERMALHAL_VARIANT == tegra
