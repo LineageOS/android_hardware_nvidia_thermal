@@ -20,7 +20,9 @@ include $(CLEAR_VARS)
 
 LOCAL_SRC_FILES := thermal.c
 
-ifeq ($(TARGET_TEGRA_VERSION),t124)
+ifeq ($(TARGET_TEGRA_VERSION),t114)
+    LOCAL_SRC_FILES += thermal.t114.c
+else ifeq ($(TARGET_TEGRA_VERSION),t124)
     LOCAL_SRC_FILES += thermal.t124.c
 else ifeq ($(TARGET_TEGRA_VERSION),t210)
     LOCAL_SRC_FILES += thermal.t210.c
