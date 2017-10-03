@@ -16,7 +16,7 @@
 
 #include <hardware/hardware.h>
 #include <hardware/thermal.h>
-
+#include <limits.h>
 #include "thermal.h"
 
 const char *CPU_LABEL[] = {"CPU0", "CPU1", "CPU2", "CPU3"};
@@ -32,9 +32,9 @@ thermal_desc_t platform_data[] = {
         .type = DEVICE_TEMPERATURE_CPU,
         .sensor_label = "CPU-therm",
         .throttling_threshold = 89,
-        .shutdown_threshold = 103,
-        .vr_throttling_threshold = 89,
+        .shutdown_threshold = 101,
         .multiplier = 0.001,
+        .vr_throttling_threshold = UNKNOWN_TEMPERATURE,
         .cores = 4,
         .core_names = CPU_LABEL,
         .read_temperature = read_cluster_temperature,
@@ -43,10 +43,27 @@ thermal_desc_t platform_data[] = {
         .name = "GPU",
         .type = DEVICE_TEMPERATURE_GPU,
         .sensor_label = "GPU-therm",
-        .throttling_threshold = 90.5,
+        .throttling_threshold = 91,
         .shutdown_threshold = 103,
-        .vr_throttling_threshold = 90.5,
         .multiplier = 0.001,
+    },
+    {
+        .name = "BATTERY",
+        .type = DEVICE_TEMPERATURE_BATTERY,
+        .sensor_label = "Battery",
+        .throttling_threshold = UNKNOWN_TEMPERATURE,
+        .shutdown_threshold = UNKNOWN_TEMPERATURE,
+        .multiplier = 0.001,
+        .vr_throttling_threshold = UNKNOWN_TEMPERATURE,
+    },
+    {
+        .name = "SKIN",
+        .type = DEVICE_TEMPERATURE_SKIN,
+        .sensor_label = "Tdiode",
+        .throttling_threshold = UNKNOWN_TEMPERATURE,
+        .shutdown_threshold = UNKNOWN_TEMPERATURE,
+        .multiplier = 0.001,
+        .vr_throttling_threshold = UNKNOWN_TEMPERATURE,
     },
 };
 
