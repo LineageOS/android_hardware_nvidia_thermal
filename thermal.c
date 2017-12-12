@@ -308,8 +308,35 @@ static ssize_t get_cooling_devices(thermal_module_t *module, cooling_device_t *l
     return 1;
 }
 
+static int thermal_open(__attribute__ ((unused)) const hw_module_t *module, const char *name,
+                          hw_device_t **device)
+{
+    if (strcmp(name, THERMAL_HARDWARE_MODULE_ID))
+        return -EINVAL;
+
+    thermal_module_t *dev = (thermal_module_t *)calloc(1,
+            sizeof(thermal_module_t));
+
+    if (!dev) {
+        ALOGD("%s: failed to allocate memory", __FUNCTION__);
+        return -ENOMEM;
+    }
+
+    dev->common.tag = HARDWARE_MODULE_TAG;
+    dev->common.module_api_version = THERMAL_HARDWARE_MODULE_API_VERSION_0_1;
+    dev->common.hal_api_version = HARDWARE_HAL_API_VERSION;
+
+    dev->getTemperatures = get_temperatures;
+    dev->getCpuUsages = get_cpu_usages;
+    dev->getCoolingDevices = get_cooling_devices;
+
+    *device = (hw_device_t*)dev;
+
+    return 0;
+}
+
 static struct hw_module_methods_t thermal_module_methods = {
-    .open = NULL,
+    .open = thermal_open,
 };
 
 thermal_module_t HAL_MODULE_INFO_SYM = {
