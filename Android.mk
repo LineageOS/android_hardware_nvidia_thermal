@@ -18,26 +18,16 @@ LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := thermal.c
+LOCAL_SRC_FILES := thermal.c \
+                   parse_thermal.c
 
-ifeq ($(TARGET_TEGRA_VERSION),t114)
-    LOCAL_SRC_FILES += thermal.t114.c
-else ifeq ($(TARGET_TEGRA_VERSION),t124)
-    LOCAL_SRC_FILES += thermal.t124.c
-else ifeq ($(TARGET_TEGRA_VERSION),t210)
-    LOCAL_SRC_FILES += thermal.t210.c
-endif
-
+LOCAL_MODULE               := thermal.$(TARGET_BOARD_PLATFORM)
 LOCAL_MODULE_RELATIVE_PATH := hw
-
-LOCAL_PROPRIETARY_MODULE := true
-
-LOCAL_SHARED_LIBRARIES := liblog libcutils
-
-LOCAL_MODULE := thermal.$(TARGET_BOARD_PLATFORM)
-
-LOCAL_MODULE_TAGS := optional
-
+LOCAL_PROPRIETARY_MODULE   := true
+LOCAL_C_INCLUDES           := external/libxml2/include \
+                              external/icu/icu4c/source/common
+LOCAL_SHARED_LIBRARIES     := liblog libcutils libxml2 libicuuc
+LOCAL_MODULE_TAGS          := optional
 include $(BUILD_SHARED_LIBRARY)
 
 endif # TARGET_THERMALHAL_VARIANT == tegra

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,31 @@
 #ifndef _TEGRA_THERMAL_H
 #define _TEGRA_THERMAL_H
 
-#define MAX_LENGTH         50
+#define MAX_LENGTH         100
 
 typedef struct thermal_desc_t {
-    char name[MAX_LENGTH];
+    char *name;
     int type;
-    char sensor_label[MAX_LENGTH];          /* from thermal_zoneX/type */
+    char *sensor_label;          /* from thermal_zoneX/type */
     float throttling_threshold;
-    float shutdown_threshold;
     float vr_throttling_threshold;
+    float shutdown_threshold;
+    char *threshold_label;
+    char *throttling_threshold_path;
+    char *vr_throttling_threshold_path;
+    char *shutdown_threshold_path;
     float multiplier;                       /* Conversion factor to celsius */
     int cores;                              /* CPUs only: cores to report */
-    const char **core_names;
+    char **core_names;
     int (*read_temperature)(const struct thermal_desc_t *, temperature_t *, int size);
     char *temperature_path;
 } thermal_desc_t;
 
+typedef struct cooling_desc_t {
+    char *name;
+    int type;
+    char *cooling_path;
+} cooling_desc_t;
 
 int read_cluster_temperature(const thermal_desc_t *in, temperature_t *out, int size);
 int read_temperature(const thermal_desc_t *in, temperature_t *out, int size);

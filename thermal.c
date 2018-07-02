@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 The Android Open Source Project
- * Copyright (c) 2016, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2016-2017, NVIDIA CORPORATION.  All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,10 @@
 
 #include <hardware/hardware.h>
 #include <hardware/thermal.h>
+#include <sys/system_properties.h>
 
 #include "thermal.h"
+#include "parse_thermal.h"
 
 #define CPU_LABEL               "CPU"
 #define CPU_USAGE_FILE          "/proc/stat"
@@ -41,19 +43,150 @@
 #define THERMAL_DIR             "thermal_zone"
 #define CPU_ONLINE_FILE_FORMAT  "/sys/devices/system/cpu/cpu%d/online"
 
-#define RPM_FAN_FILE            "/sys/kernel/debug/tegra_fan/rpm_measured"
+#define RPM_FAN_FILE            "/sys/kernel/debug/tegra_fan/cur_rpm"
 
-extern thermal_desc_t platform_data[];
+#define TRIP_POINT              "trip_point"
+#define THROTTLING_THRESHOLD    "passive"
+#define VR_THROTTLING_THRESHOLD "passive"
+#define SHUTDOWN_THRESHOLD      "critical"
+
+#define HARDWARE_TYPE_PROP      "ro.hardware"
+
+extern thermal_desc_t *platform_data;
+extern cooling_desc_t *cooling_data;
 extern int platform_data_count;
-extern int num_cpus_total;
+extern int cooling_data_count;
 
-static int get_temperature_paths()
+extern int *num_cpus_total;
+
+
+
+static int update_threshold_path(char **path, char *type_cmp, char *type, char *file_name)
+{
+    if (!*path && !strcmp(type_cmp, type)) {
+        if (!(*path = malloc(strlen(file_name) + 1)))
+            return -ENOMEM;
+
+        strcpy(*path, file_name);
+    }
+    return 0;
+}
+
+static int update_threshold_paths(int cnt, char *trip_point_type, char *file_name)
+{
+    int ret;
+
+    if ((ret = update_threshold_path(&platform_data[cnt].throttling_threshold_path,
+                        THROTTLING_THRESHOLD, trip_point_type, file_name)) < 0)
+        return ret;
+
+    if ((ret = update_threshold_path(&platform_data[cnt].vr_throttling_threshold_path,
+                        VR_THROTTLING_THRESHOLD, trip_point_type, file_name)) < 0)
+        return ret;
+
+    if ((ret = update_threshold_path(&platform_data[cnt].shutdown_threshold_path,
+                        SHUTDOWN_THRESHOLD, trip_point_type, file_name)) < 0)
+        return ret;
+
+    return 0;
+}
+
+static int search_threshold_paths(DIR *sub_dir, char *dir_name, int cnt)
+{
+    FILE *file;
+    struct dirent *sub_de;
+    char file_name[MAX_LENGTH];
+    char trip_point_type[MAX_LENGTH];
+    int ret;
+
+    while ((sub_de = readdir(sub_dir)) != NULL) {
+        if (strstr(sub_de->d_name, TRIP_POINT) && strstr(sub_de->d_name, "type")) {
+
+            snprintf(file_name, MAX_LENGTH, "%s/%s", dir_name, sub_de->d_name);
+            file = fopen(file_name, "r");
+            if (file == NULL)
+                continue;
+
+            if (1 != fscanf(file, "%s", (char *)&trip_point_type)) {
+                fclose(file);
+                continue;
+            }
+            fclose(file);
+
+            snprintf(file_name, MAX_LENGTH, "%s/%.*stemp",
+                    dir_name, (int)(strlen(sub_de->d_name) - strlen("type")), sub_de->d_name);
+
+            if ((ret = update_threshold_paths(cnt, trip_point_type, file_name)) < 0)
+                return ret;
+
+        }
+    }
+
+    return 0;
+}
+
+static int get_threshold_paths(char *current_label, struct dirent *de, int cnt)
+{
+    DIR *sub_dir;
+    FILE *file;
+    char dir_name[MAX_LENGTH];
+    char threshold_label[MAX_LENGTH];
+    int ret = 0;
+
+    if (platform_data[cnt].threshold_label)
+        snprintf(threshold_label, MAX_LENGTH, "%s", platform_data[cnt].threshold_label);
+    else
+        snprintf(threshold_label, MAX_LENGTH, "%s", platform_data[cnt].sensor_label);
+
+    if (!strcmp(threshold_label, current_label)) {
+        snprintf(dir_name, MAX_LENGTH, "%s/%s", THERMAL_ROOT_DIR, de->d_name);
+        sub_dir = opendir(dir_name);
+        if (sub_dir == NULL)
+            return ret;
+
+        ret = search_threshold_paths(sub_dir, dir_name, cnt);
+
+        closedir(sub_dir);
+    }
+    return ret;
+}
+
+static int get_temperature_path(char *current_label, struct dirent *de, int cnt)
+{
+    char file_name[MAX_LENGTH];
+
+    if (!strcmp(platform_data[cnt].sensor_label, current_label)) {
+        snprintf(file_name, MAX_LENGTH, "%s/%s/temp", THERMAL_ROOT_DIR, de->d_name);
+
+        platform_data[cnt].temperature_path = malloc(strlen(file_name) + 1);
+        if (!platform_data[cnt].temperature_path)
+            return -ENOMEM;
+
+        strcpy(platform_data[cnt].temperature_path, file_name);
+    }
+    return 0;
+}
+
+static int get_paths()
 {
     DIR *dir;
     struct dirent *de;
     char file_name[MAX_LENGTH];
     char current_label[MAX_LENGTH];
     FILE *file;
+    int ret;
+
+    for (int i = 0; i < platform_data_count; i++) {
+        if (!platform_data[i].temperature_path ||
+            !platform_data[i].throttling_threshold_path ||
+            !platform_data[i].vr_throttling_threshold_path ||
+            !platform_data[i].shutdown_threshold_path) {
+            break;
+        } else {
+            return 0;
+        }
+    }
+
     dir = opendir(THERMAL_ROOT_DIR);
 
     while ((de = readdir(dir)) != NULL) {
@@ -71,59 +204,69 @@ static int get_temperature_paths()
         }
         fclose(file);
 
-        /* If type matches sensor label in platform data, cache it in temperature_path */
         for (int i = 0; i < platform_data_count; i++) {
-            if (platform_data[i].temperature_path)
-                continue;
+            if (!platform_data[i].temperature_path) {
+                if ((ret = get_temperature_path(current_label, de, i)) < 0)
+                    return ret;
+            }
 
-            if (!strcmp(platform_data[i].sensor_label, current_label)) {
-                snprintf(file_name, MAX_LENGTH, "%s/%s/temp", THERMAL_ROOT_DIR, de->d_name);
-                platform_data[i].temperature_path = malloc(strlen(file_name) + 1);
-
-                if (!platform_data[i].temperature_path)
-                    return -ENOMEM;
-
-                strcpy(platform_data[i].temperature_path, file_name);
+            if (!platform_data[i].throttling_threshold_path ||
+                !platform_data[i].vr_throttling_threshold_path ||
+                !platform_data[i].shutdown_threshold_path) {
+                if ((ret = get_threshold_paths(current_label, de, i)) < 0)
+                    return ret;
             }
         }
+
     }
-
     closedir(dir);
-
     return 0;
 }
 
-int read_temperature(const thermal_desc_t *in, temperature_t *out, int size)
+static int read_temp_file(char *path, int size, float *temp)
 {
-    char temperature_path[MAX_LENGTH];
-    FILE *fp;
-    float temp;
     int ret;
+    FILE *fp;
 
     if (size < 1)
         return -ENOMEM;
 
-    if (in->temperature_path)
-        fp = fopen(in->temperature_path, "r");
+    if (path)
+        fp = fopen(path, "r");
     else
         return -ENOENT;
 
     if (fp == NULL)
         return -ENOENT;
 
-    ret = fscanf(fp, "%f", &temp);
+    ret = fscanf(fp, "%f", temp);
     fclose(fp);
+    return ret;
+}
 
-    if (ret != 1)
+int read_temperature(const thermal_desc_t *in, temperature_t *out, int size)
+{
+    float temp, throttling, vr_throttling, shutdown;
+
+    if (read_temp_file(in->temperature_path, size, &temp) != 1)
+        return -ENOENT;
+
+    if (read_temp_file(in->throttling_threshold_path, size, &throttling) != 1)
+        return -ENOENT;
+
+    if (read_temp_file(in->vr_throttling_threshold_path, size, &vr_throttling) != 1)
+        return -ENOENT;
+
+    if (read_temp_file(in->shutdown_threshold_path, size, &shutdown) != 1)
         return -ENOENT;
 
     (*out) = (temperature_t) {
         .type = in->type,
         .name = in->name,
         .current_value = temp * in->multiplier,
-        .throttling_threshold = in->throttling_threshold,
-        .shutdown_threshold = in->shutdown_threshold,
-        .vr_throttling_threshold = in->vr_throttling_threshold
+        .throttling_threshold = throttling * in->multiplier,
+        .shutdown_threshold = shutdown * in->multiplier,
+        .vr_throttling_threshold = vr_throttling * in->multiplier
     };
 
     // Added "1" temperature to list
@@ -154,6 +297,19 @@ int read_cluster_temperature(const thermal_desc_t *in, temperature_t *out, int s
 static ssize_t get_temperatures(thermal_module_t *module, temperature_t *list, size_t size) {
     size_t idx = 0;
     int ret = 0;
+    char hw_name[PROP_VALUE_MAX];
+
+    if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)) {
+        ret = parse_thermal_config_xml(hw_name);
+        if (ret) {
+            ALOGE("Parsing failed");
+            return -EINVAL;
+        }
+    }
+    else{
+        ALOGE("Could not read property %s", HARDWARE_TYPE_PROP);
+        return -ENOENT;
+    }
 
     if (list == NULL) {
         for (int i = 0; i < platform_data_count; i++)
@@ -164,8 +320,7 @@ static ssize_t get_temperatures(thermal_module_t *module, temperature_t *list, s
     if (size == 0)
         return -ENOMEM;
 
-    ret = get_temperature_paths();
-
+    ret = get_paths();
     if (ret < 0)
         goto out;
 
@@ -183,6 +338,7 @@ static ssize_t get_temperatures(thermal_module_t *module, temperature_t *list, s
 
     /* Success.  Return number of entries */
     ret = idx;
+    return ret;
 
 out:
     for (int i = 0; i < platform_data_count; i++) {
@@ -205,9 +361,24 @@ static ssize_t get_cpu_usages(thermal_module_t *module, cpu_usage_t *list) {
     char file_name[MAX_LENGTH];
     FILE *cpu_file;
     FILE *file;
+    int ret = 0;
+
+    char hw_name[PROP_VALUE_MAX];
+
+    if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)) {
+        ret = parse_thermal_config_xml(hw_name);
+        if (ret) {
+            ALOGE("Parsing failed");
+            return -EINVAL;
+        }
+    }
+    else{
+        ALOGE("Could not read property %s", HARDWARE_TYPE_PROP);
+        return -ENOENT;
+    }
 
     if (list == NULL) {
-        return num_cpus_total;
+        return *num_cpus_total;
     }
 
     file = fopen(CPU_USAGE_FILE, "r");
@@ -278,65 +449,64 @@ static ssize_t get_cooling_devices(thermal_module_t *module, cooling_device_t *l
     struct stat buffer;
     FILE *file;
     float rpm;
-    int ret;
+    int ret = 0, count = 0;
+    char cooling_file[MAX_LENGTH];
+    char hw_name[PROP_VALUE_MAX];
 
-    if (list == NULL)
-        return (stat(RPM_FAN_FILE, &buffer) == 0) ? 1 : 0;
+    if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)){
+        ret = parse_thermal_config_xml(hw_name);
+        if (ret) {
+            ALOGE("Parsing failed");
+            return -EINVAL;
+        }
+    }
+    else{
+        ALOGE("Could not read property %s", HARDWARE_TYPE_PROP);
+        return -ENOENT;
+    }
+
+    if (list == NULL) {
+        for (int i=0;i < cooling_data_count;i++) {
+            snprintf(cooling_file, MAX_LENGTH, "%s",
+                (cooling_data[i].cooling_path ? cooling_data[i].cooling_path : RPM_FAN_FILE));
+            count += (stat(cooling_file, &buffer) == 0) ? 1 : 0;
+        }
+        return count;
+    }
 
     if (size <= 0)
         return -ENOMEM;
 
-    file = fopen(RPM_FAN_FILE, "r");
+    for (count=0; count < (int)size; count++) {
+        snprintf(cooling_file, MAX_LENGTH, "%s",
+                (cooling_data[count].cooling_path ? cooling_data[count].cooling_path : RPM_FAN_FILE) );
 
-    if (file == NULL) {
-        ALOGE("%s: failed to open: %s", __func__, strerror(errno));
-        return -errno;
+
+        file = fopen(cooling_file, "r");
+
+        if (file == NULL) {
+            ALOGE("%s: failed to open: %s", __func__, strerror(errno));
+            return -errno;
+        }
+
+        ret = fscanf(file, "%f", &rpm);
+        fclose(file);
+
+        if (ret != 1)
+            return -ENOENT;
+
+        list[count] = (cooling_device_t) {
+            .type = cooling_data[count].type,
+            .name = cooling_data[count].name,
+            .current_value = rpm,
+        };
     }
 
-    ret = fscanf(file, "%f", &rpm);
-    fclose(file);
-
-    if (ret != 1)
-        return -ENOENT;
-
-    (*list) = (cooling_device_t) {
-        .type = FAN_RPM,
-        .name = "FAN",
-        .current_value = rpm,
-    };
-
-    return 1;
-}
-
-static int thermal_open(__attribute__ ((unused)) const hw_module_t *module, const char *name,
-                          hw_device_t **device)
-{
-    if (strcmp(name, THERMAL_HARDWARE_MODULE_ID))
-        return -EINVAL;
-
-    thermal_module_t *dev = (thermal_module_t *)calloc(1,
-            sizeof(thermal_module_t));
-
-    if (!dev) {
-        ALOGD("%s: failed to allocate memory", __FUNCTION__);
-        return -ENOMEM;
-    }
-
-    dev->common.tag = HARDWARE_MODULE_TAG;
-    dev->common.module_api_version = THERMAL_HARDWARE_MODULE_API_VERSION_0_1;
-    dev->common.hal_api_version = HARDWARE_HAL_API_VERSION;
-
-    dev->getTemperatures = get_temperatures;
-    dev->getCpuUsages = get_cpu_usages;
-    dev->getCoolingDevices = get_cooling_devices;
-
-    *device = (hw_device_t*)dev;
-
-    return 0;
+    return count;
 }
 
 static struct hw_module_methods_t thermal_module_methods = {
-    .open = thermal_open,
+    .open = NULL,
 };
 
 thermal_module_t HAL_MODULE_INFO_SYM = {
