@@ -128,7 +128,6 @@ static int search_threshold_paths(DIR *sub_dir, char *dir_name, int cnt)
 static int get_threshold_paths(char *current_label, struct dirent *de, int cnt)
 {
     DIR *sub_dir;
-    FILE *file;
     char dir_name[MAX_LENGTH];
     char threshold_label[MAX_LENGTH];
     int ret = 0;
@@ -294,7 +293,7 @@ int read_cluster_temperature(const thermal_desc_t *in, temperature_t *out, int s
     return in->cores;
 }
 
-static ssize_t get_temperatures(thermal_module_t *module, temperature_t *list, size_t size) {
+static ssize_t get_temperatures(__attribute__((unused)) thermal_module_t *module, temperature_t *list, size_t size) {
     size_t idx = 0;
     int ret = 0;
     char hw_name[PROP_VALUE_MAX];
@@ -351,7 +350,7 @@ out:
     return ret;
 }
 
-static ssize_t get_cpu_usages(thermal_module_t *module, cpu_usage_t *list) {
+static ssize_t get_cpu_usages(__attribute__((unused)) thermal_module_t *module, cpu_usage_t *list) {
     int vals, cpu_num, online;
     ssize_t read;
     uint64_t user, nice, system, idle, active, total;
@@ -445,7 +444,7 @@ static ssize_t get_cpu_usages(thermal_module_t *module, cpu_usage_t *list) {
     return size;
 }
 
-static ssize_t get_cooling_devices(thermal_module_t *module, cooling_device_t *list, size_t size) {
+static ssize_t get_cooling_devices(__attribute__((unused)) thermal_module_t *module, cooling_device_t *list, size_t size) {
     struct stat buffer;
     FILE *file;
     float rpm;
