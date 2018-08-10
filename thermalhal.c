@@ -33,7 +33,7 @@
 #include <hardware/thermal.h>
 #include <sys/system_properties.h>
 
-#include "thermal.h"
+#include "thermalhal.h"
 #include "parse_thermal.h"
 
 #define CPU_LABEL               "CPU"
@@ -293,14 +293,12 @@ int read_cluster_temperature(const thermal_desc_t *in, temperature_t *out, int s
     return in->cores;
 }
 
-static ssize_t get_temperatures(__attribute__((unused)) thermal_module_t *module, temperature_t *list, size_t size) {
-    size_t idx = 0;
-    int ret = 0;
+ssize_t thermal_init()
+{
     char hw_name[PROP_VALUE_MAX];
 
     if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)) {
-        ret = parse_thermal_config_xml(hw_name);
-        if (ret) {
+        if (parse_thermal_config_xml(hw_name)) {
             ALOGE("Parsing failed");
             return -EINVAL;
         }
@@ -309,6 +307,13 @@ static ssize_t get_temperatures(__attribute__((unused)) thermal_module_t *module
         ALOGE("Could not read property %s", HARDWARE_TYPE_PROP);
         return -ENOENT;
     }
+
+    return platform_data_count;
+}
+
+ssize_t get_temperatures(temperature_t *list, size_t size) {
+    size_t idx = 0;
+    int ret = 0;
 
     if (list == NULL) {
         for (int i = 0; i < platform_data_count; i++)
@@ -350,7 +355,7 @@ out:
     return ret;
 }
 
-static ssize_t get_cpu_usages(__attribute__((unused)) thermal_module_t *module, cpu_usage_t *list) {
+ssize_t get_cpu_usages(cpu_usage_t *list) {
     int vals, cpu_num, online;
     ssize_t read;
     uint64_t user, nice, system, idle, active, total;
@@ -360,21 +365,6 @@ static ssize_t get_cpu_usages(__attribute__((unused)) thermal_module_t *module, 
     char file_name[MAX_LENGTH];
     FILE *cpu_file;
     FILE *file;
-    int ret = 0;
-
-    char hw_name[PROP_VALUE_MAX];
-
-    if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)) {
-        ret = parse_thermal_config_xml(hw_name);
-        if (ret) {
-            ALOGE("Parsing failed");
-            return -EINVAL;
-        }
-    }
-    else{
-        ALOGE("Could not read property %s", HARDWARE_TYPE_PROP);
-        return -ENOENT;
-    }
 
     if (list == NULL) {
         return *num_cpus_total;
@@ -444,25 +434,12 @@ static ssize_t get_cpu_usages(__attribute__((unused)) thermal_module_t *module, 
     return size;
 }
 
-static ssize_t get_cooling_devices(__attribute__((unused)) thermal_module_t *module, cooling_device_t *list, size_t size) {
+ssize_t get_cooling_devices(cooling_device_t *list, size_t size) {
     struct stat buffer;
     FILE *file;
     float rpm;
     int ret = 0, count = 0;
     char cooling_file[MAX_LENGTH];
-    char hw_name[PROP_VALUE_MAX];
-
-    if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)){
-        ret = parse_thermal_config_xml(hw_name);
-        if (ret) {
-            ALOGE("Parsing failed");
-            return -EINVAL;
-        }
-    }
-    else{
-        ALOGE("Could not read property %s", HARDWARE_TYPE_PROP);
-        return -ENOENT;
-    }
 
     if (list == NULL) {
         for (int i=0;i < cooling_data_count;i++) {
@@ -503,23 +480,3 @@ static ssize_t get_cooling_devices(__attribute__((unused)) thermal_module_t *mod
 
     return count;
 }
-
-static struct hw_module_methods_t thermal_module_methods = {
-    .open = NULL,
-};
-
-thermal_module_t HAL_MODULE_INFO_SYM = {
-    .common = {
-        .tag = HARDWARE_MODULE_TAG,
-        .module_api_version = THERMAL_HARDWARE_MODULE_API_VERSION_0_1,
-        .hal_api_version = HARDWARE_HAL_API_VERSION,
-        .id = THERMAL_HARDWARE_MODULE_ID,
-        .name = "Tegra Thermal HAL",
-        .author = "The Android Open Source Project",
-        .methods = &thermal_module_methods,
-    },
-
-    .getTemperatures = get_temperatures,
-    .getCpuUsages = get_cpu_usages,
-    .getCoolingDevices = get_cooling_devices,
-};
