@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #ifndef _TEGRA_THERMAL_H
 #define _TEGRA_THERMAL_H
 
@@ -46,4 +51,13 @@ typedef struct cooling_desc_t {
 int read_cluster_temperature(const thermal_desc_t *in, temperature_t *out, int size);
 int read_temperature(const thermal_desc_t *in, temperature_t *out, int size);
 
+ssize_t thermal_init();
+ssize_t get_temperatures(temperature_t *list, size_t size);
+ssize_t get_cpu_usages(cpu_usage_t *list);
+ssize_t get_cooling_devices(cooling_device_t *list, size_t size);
+
 #endif // _TEGRA_THERMAL_H
+
+#ifdef __cplusplus
+}
+#endif

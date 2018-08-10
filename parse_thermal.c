@@ -27,7 +27,7 @@
 #include "parse_thermal.h"
 #include <hardware/hardware.h>
 #include <hardware/thermal.h>
-#include "thermal.h"
+#include "thermalhal.h"
 
 #define XML_PREFIX "/system/etc/thermalhal."
 #define XML_SUFFIX ".xml"
