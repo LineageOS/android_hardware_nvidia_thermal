@@ -29,7 +29,7 @@
 #include <hardware/thermal.h>
 #include "thermalhal.h"
 
-#define XML_PREFIX "/system/etc/thermalhal."
+#define XML_PREFIX "/vendor/etc/thermalhal."
 #define XML_SUFFIX ".xml"
 
 thermal_desc_t * platform_data = NULL;
