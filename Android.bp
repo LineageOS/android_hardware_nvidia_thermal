@@ -27,7 +27,6 @@ cc_binary {
         "libdl",
         "libxml2",
         "libhidlbase",
-        "libhidltransport",
         "libhardware",
         "libutils",
         "android.hardware.thermal@1.0",
