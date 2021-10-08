@@ -32,6 +32,8 @@ cc_binary {
         "android.hardware.thermal@1.0",
     ],
 
+    cflags: [ "-Wno-error=unreachable-code-loop-increment" ],
+
     name: "android.hardware.thermal@1.0-service-nvidia",
     init_rc: ["android.hardware.thermal@1.0-service-nvidia.rc"],
     vintf_fragments: ["android.hardware.thermal@1.0-service-nvidia.xml"],
