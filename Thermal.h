@@ -39,8 +39,6 @@ using ::android::hardware::Return;
 using ::android::hardware::Void;
 
 struct Thermal : public IThermal {
-    ssize_t pd_count;
-
     // Methods from ::android::hardware::thermal::V1_0::IThermal follow.
 
     Thermal();
