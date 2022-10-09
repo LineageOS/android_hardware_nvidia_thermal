@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcbd8e5a_d9b6c9ec",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2022-10-09T02:55:44Z",
+      "side": 1,
+      "message": "Verified booting on foster_e_hdd. Thermalhal has other issues, but not related to this change.",
+      "revId": "360ca6f699ef1c2ca4b9393e842e14e68c4940dd",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
