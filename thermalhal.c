@@ -174,17 +174,20 @@ static int get_paths()
     char current_label[MAX_LENGTH];
     FILE *file;
     int ret;
+    bool dir_missing = false;
 
     for (int i = 0; i < platform_data_count; i++) {
         if (!platform_data[i].temperature_path ||
             !platform_data[i].throttling_threshold_path ||
             !platform_data[i].vr_throttling_threshold_path ||
             !platform_data[i].shutdown_threshold_path) {
+            dir_missing = true;
             break;
-        } else {
-            return 0;
         }
     }
+
+    if (!dir_missing)
+        return 0;
 
     dir = opendir(THERMAL_ROOT_DIR);
 
