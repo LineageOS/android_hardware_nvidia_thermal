@@ -51,6 +51,7 @@
 #define SHUTDOWN_THRESHOLD      "critical"
 
 #define HARDWARE_TYPE_PROP      "ro.hardware"
+#define NAME_TYPE_PROP          "ro.product.name"
 
 extern thermal_desc_t *platform_data;
 extern cooling_desc_t *cooling_data;
@@ -300,14 +301,15 @@ ssize_t thermal_init()
 {
     char hw_name[PROP_VALUE_MAX];
 
-    if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)) {
+    if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)
+            || __system_property_get(NAME_TYPE_PROP, hw_name)) {
         if (parse_thermal_config_xml(hw_name)) {
             ALOGE("Parsing failed");
             return -EINVAL;
         }
     }
     else{
-        ALOGE("Could not read property %s", HARDWARE_TYPE_PROP);
+        ALOGE("Could not read properties %s or %s", HARDWARE_TYPE_PROP, NAME_TYPE_PROP);
         return -ENOENT;
     }
 
