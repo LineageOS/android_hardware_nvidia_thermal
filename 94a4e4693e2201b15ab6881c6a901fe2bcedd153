@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8875c0c6_44ae8cad",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2024-05-13T22:10:42Z",
+      "side": 1,
+      "message": "This has been sitting around for a while on cm-shield, should just merge it. All known targets explicitly set this path in their config, but the default should still match *something* current. The old value is from 3.10 or maybe even 3.4.",
+      "revId": "94a4e4693e2201b15ab6881c6a901fe2bcedd153",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
