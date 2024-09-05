@@ -3,6 +3,7 @@
         <name>android.hardware.thermal</name>
         <interface>
             <name>IThermal</name>
+            <version>2</version>
             <instance>default</instance>
         </interface>
     </hal>
