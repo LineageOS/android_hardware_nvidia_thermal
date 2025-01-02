@@ -179,6 +179,16 @@ ndk::ScopedAStatus Thermal::unregisterThermalChangedCallback(
     return ndk::ScopedAStatus::ok();
 }
 
+ndk::ScopedAStatus Thermal::registerCoolingDeviceChangedCallbackWithType(
+        const std::shared_ptr<ICoolingDeviceChangedCallback>& /* in_callback */, CoolingType /* in_type */) {
+    return ndk::ScopedAStatus::ok();
+}
+
+ndk::ScopedAStatus Thermal::unregisterCoolingDeviceChangedCallback(
+        const std::shared_ptr<ICoolingDeviceChangedCallback>& /* in_callback */) {
+    return ndk::ScopedAStatus::ok();
+}
+
 }  // namespace nvidia
 }  // namespace impl
 }  // namespace thermal
