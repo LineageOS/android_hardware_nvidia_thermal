@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4411963_053fdd02",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2025-01-02T08:05:20Z",
+      "side": 1,
+      "message": "Fixes build failure that started on Android 15 QPR1.",
+      "revId": "9d04c5c7d2dd5fb2003300dd8b4c29d3753e8cad",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
