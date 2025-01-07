@@ -51,6 +51,7 @@
 #define SHUTDOWN_THRESHOLD      "critical"
 
 #define HARDWARE_TYPE_PROP      "ro.hardware"
+#define PRODUCT_TYPE_PROP       "ro.product.name"
 
 extern thermal_desc_t *platform_data;
 extern cooling_desc_t *cooling_data;
@@ -299,16 +300,22 @@ int read_cluster_temperature(const thermal_desc_t *in, temperature_t *out, int s
 ssize_t thermal_init()
 {
     char hw_name[PROP_VALUE_MAX];
+    char prod_name[PROP_VALUE_MAX];
 
-    if (__system_property_get(HARDWARE_TYPE_PROP, hw_name)) {
-        if (parse_thermal_config_xml(hw_name)) {
-            ALOGE("Parsing failed");
-            return -EINVAL;
-        }
-    }
-    else{
+    if (!__system_property_get(HARDWARE_TYPE_PROP, hw_name)) {
         ALOGE("Could not read property %s", HARDWARE_TYPE_PROP);
         return -ENOENT;
+    }
+    if (!__system_property_get(PRODUCT_TYPE_PROP, prod_name)) {
+        ALOGE("Could not read property %s", PRODUCT_TYPE_PROP);
+        return -ENOENT;
+    }
+
+    if (parse_thermal_config_xml(prod_name)) {
+        if (parse_thermal_config_xml(hw_name)) {
+            ALOGE("Parsing failed for all paths", prod_name);
+            return -EINVAL;
+        }
     }
 
     return platform_data_count;
