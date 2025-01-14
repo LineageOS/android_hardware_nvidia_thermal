@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8cfccc00_cc876ff9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 14048
+      },
+      "writtenOn": "2025-01-14T08:27:53Z",
+      "side": 1,
+      "message": "Verified on arvala that product specific config is read. Verified on mdarcy, where the product name does not match a config, that the fallback to ro.hardware still works as expected.",
+      "revId": "38e00920e836c6985caf7b68a3ab99383cb466bc",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
