@@ -19,6 +19,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -255,13 +256,13 @@ int read_temperature(const thermal_desc_t *in, temperature_t *out, int size)
         return -ENOENT;
 
     if (read_temp_file(in->throttling_threshold_path, size, &throttling) != 1)
-        return -ENOENT;
+        throttling = NAN;
 
     if (read_temp_file(in->vr_throttling_threshold_path, size, &vr_throttling) != 1)
-        return -ENOENT;
+        vr_throttling = NAN;
 
     if (read_temp_file(in->shutdown_threshold_path, size, &shutdown) != 1)
-        return -ENOENT;
+        shutdown = NAN;
 
     (*out) = (temperature_t) {
         .type = in->type,
