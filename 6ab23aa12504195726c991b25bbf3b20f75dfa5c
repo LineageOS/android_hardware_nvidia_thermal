@@ -16,6 +16,23 @@
       "message": "Fixes hal failure on tegra devkits booting an android common kernel.",
       "revId": "6ab23aa12504195726c991b25bbf3b20f75dfa5c",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a46f8067_3f46f69a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2026-01-02T00:22:01Z",
+      "side": 1,
+      "message": "ff\u0027d to 23.1 and 23.2",
+      "revId": "6ab23aa12504195726c991b25bbf3b20f75dfa5c",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ],
   "submitRequirementResults": []
