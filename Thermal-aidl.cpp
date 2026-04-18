@@ -189,6 +189,10 @@ ndk::ScopedAStatus Thermal::unregisterCoolingDeviceChangedCallback(
     return ndk::ScopedAStatus::ok();
 }
 
+ndk::ScopedAStatus Thermal::forecastSkinTemperature(int32_t, float*) {
+    return ndk::ScopedAStatus::fromExceptionCode(EX_UNSUPPORTED_OPERATION);
+}
+
 }  // namespace nvidia
 }  // namespace impl
 }  // namespace thermal

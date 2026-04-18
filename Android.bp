@@ -56,7 +56,7 @@ cc_binary {
         "libutils",
         "libbase",
         "libbinder_ndk",
-        "android.hardware.thermal-V2-ndk",
+        "android.hardware.thermal-V3-ndk",
     ],
 
     name: "android.hardware.thermal-service-nvidia",

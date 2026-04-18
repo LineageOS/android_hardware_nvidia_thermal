@@ -314,7 +314,7 @@ ssize_t thermal_init()
 
     if (parse_thermal_config_xml(prod_name)) {
         if (parse_thermal_config_xml(hw_name)) {
-            ALOGE("Parsing failed for all paths", prod_name);
+            ALOGE("Parsing failed for all paths");
             return -EINVAL;
         }
     }

@@ -63,6 +63,9 @@ public:
     ndk::ScopedAStatus unregisterCoolingDeviceChangedCallback(
             const std::shared_ptr<ICoolingDeviceChangedCallback>& in_callback) override;
 
+    ndk::ScopedAStatus forecastSkinTemperature(int32_t forecastSeconds,
+                                               float* _aidl_return) override;
+
   private:
     std::mutex thermal_callback_mutex_;
     std::vector<std::shared_ptr<IThermalChangedCallback>> thermal_callbacks_;
